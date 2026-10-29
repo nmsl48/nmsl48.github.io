@@ -2,7 +2,11 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="screen-orientation" content="portrait">
+<meta name="x5-orientation" content="portrait">
+<meta name="full-screen" content="yes">
+<meta name="x5-fullscreen" content="true">
 <title>德国黑慕斯蛋糕-匠心影响世界</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
@@ -243,23 +247,23 @@
     width:100%;
     height:100%;
     object-fit:cover;
-    transform:scale(.04);
+    transform:scale(.05);
     opacity:0;
   }
   #pic.boom{
-    animation:shake .16s linear 6 both;
+    animation:shake .18s linear 6 both;
   }
   #pic.boom img{
-    animation:facePop .55s cubic-bezier(.2,.85,.3,1) forwards;
+    animation:facePop .6s cubic-bezier(.2,.85,.3,1) forwards;
   }
   @keyframes facePop{
-    0%{transform:scale(.04);opacity:0;filter:brightness(.35)}
-    4%{transform:scale(.6);opacity:1}
-    11%{transform:scale(2.95);filter:brightness(1.35)}
-    20%{transform:scale(1.32);filter:brightness(1)}
-    32%{transform:scale(1.58)}
-    44%{transform:scale(1.38)}
-    100%{transform:scale(1.45)}
+    0%{transform:scale(.05);opacity:0;filter:brightness(.2) contrast(1.25)}
+    6%{transform:scale(1.3);opacity:1;filter:brightness(1.5)}
+    14%{transform:scale(.94);filter:brightness(1)}
+    24%{transform:scale(1.1)}
+    38%{transform:scale(.99)}
+    52%{transform:scale(1.06)}
+    100%{transform:scale(1.02)}
   }
   @keyframes shake{
     0%{transform:translate(0,0)}
@@ -269,6 +273,18 @@
     60%{transform:translate(9px,9px)}
     75%{transform:translate(-6px,-5px)}
     100%{transform:translate(0,0)}
+  }
+
+  @media (orientation: landscape) and (max-height: 500px){
+    #gate{
+      padding:18px 24px;
+      justify-content:flex-start;
+    }
+    #gate h1{font-size:20px;margin-bottom:16px}
+    .hint{margin-bottom:12px}
+    .code-input{width:46px;height:46px;font-size:19px}
+    .agree-row{margin-top:18px}
+    #joinBtn{margin-top:20px;height:44px}
   }
 </style>
 </head>
@@ -411,15 +427,33 @@
         }, 2000);
       }
 
+      function lockPortrait() {
+        try {
+          if (screen.orientation && screen.orientation.lock) {
+            var ret = screen.orientation.lock('portrait');
+            if (ret && typeof ret.catch === 'function') ret.catch(function () {});
+          }
+        } catch (err) {}
+      }
+
       function goFullscreen() {
         var el = document.documentElement;
         var fn = el.requestFullscreen || el.webkitRequestFullscreen ||
                  el.webkitRequestFullScreen || el.msRequestFullscreen;
-        if (!fn) return;
+        if (!fn) {
+          lockPortrait();
+          return;
+        }
         try {
           var ret = fn.call(el);
-          if (ret && typeof ret.catch === 'function') ret.catch(function () {});
-        } catch (err) {}
+          if (ret && typeof ret.then === 'function') {
+            ret.then(lockPortrait).catch(function () { lockPortrait(); });
+          } else {
+            lockPortrait();
+          }
+        } catch (err) {
+          lockPortrait();
+        }
       }
 
       function reveal() {
