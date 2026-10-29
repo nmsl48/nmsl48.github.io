@@ -16,7 +16,6 @@
     align-items:center;
     justify-content:center;
     gap:22px;
-    transition:opacity .15s linear;
   }
   #bar{
     width:220px;
@@ -62,7 +61,7 @@
     <div id="text">请稍等.美味马上到来...</div>
   </div>
   <div id="pic">
-    <img src="the-old-pastor0.png" alt="">
+    <img alt="">
   </div>
   <script>
     (function () {
@@ -70,23 +69,41 @@
       var loader = document.getElementById('loader');
       var pic = document.getElementById('pic');
       var img = pic.querySelector('img');
+      var preload = new Image();
+      var barDone = false;
+      var ready = false;
+      var shown = false;
 
-      requestAnimationFrame(function () {
-        fill.style.width = '100%';
-      });
-
-      fill.addEventListener('transitionend', function () {
-        loader.style.opacity = '0';
-        setTimeout(function () {
-          loader.style.display = 'none';
-        }, 150);
-
+      function reveal() {
+        if (shown || !barDone || !ready) return;
+        shown = true;
+        loader.style.display = 'none';
         pic.style.opacity = '1';
         requestAnimationFrame(function () {
           requestAnimationFrame(function () {
             img.style.transform = 'scale(1)';
           });
         });
+      }
+
+      preload.onload = function () {
+        img.src = preload.src;
+        img.onload = function () {
+          ready = true;
+          reveal();
+        };
+      };
+
+      preload.src = 'the-old-pastor0.png';
+
+      requestAnimationFrame(function () {
+        fill.style.width = '100%';
+      });
+
+      fill.addEventListener('transitionend', function (e) {
+        if (e.propertyName !== 'width') return;
+        barDone = true;
+        reveal();
       }, { once: true });
     })();
   </script>
