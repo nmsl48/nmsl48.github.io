@@ -24,6 +24,52 @@
     z-index:10;
   }
   #gate.hide{opacity:0;pointer-events:none}
+  #gate > *:not(.geo){position:relative;z-index:1}
+
+  .geo{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+  .geo i{position:absolute;display:block;box-sizing:border-box}
+
+  .g1{
+    width:340px;height:340px;border-radius:50%;
+    border:1px solid #efefef;top:-120px;left:-110px;
+    animation:drift 18s ease-in-out infinite;
+  }
+  .g2{
+    width:250px;height:250px;border-radius:50%;
+    background:#f7f7f7;right:-95px;bottom:-85px;
+    animation:drift 22s ease-in-out infinite reverse;
+  }
+  .g3{
+    width:170px;height:170px;border:1px solid #ececec;border-radius:6px;
+    right:-52px;top:20%;--r:18deg;
+    animation:drift 20s ease-in-out infinite;
+  }
+  .g4{
+    width:84px;height:84px;background:#f4f4f4;border-radius:4px;
+    left:-26px;bottom:22%;--r:32deg;
+    animation:drift 16s ease-in-out infinite reverse;
+  }
+  .g5{
+    width:1px;height:48%;
+    background:linear-gradient(#fff,#ececec,#fff);
+    left:20%;top:6%;
+    animation:drift 24s ease-in-out infinite;
+  }
+  .g6{
+    width:10px;height:10px;border-radius:50%;background:#ededed;
+    right:24%;top:16%;
+    animation:drift 12s ease-in-out infinite reverse;
+  }
+  .g7{
+    width:120px;height:120px;border-radius:50%;
+    border:1px dashed #f0f0f0;left:14%;bottom:8%;
+    animation:drift 26s ease-in-out infinite;
+  }
+
+  @keyframes drift{
+    0%,100%{transform:translate(0,0) rotate(var(--r,0deg))}
+    50%{transform:translate(0,-18px) rotate(var(--r,0deg))}
+  }
 
   #gate h1{
     font-size:26px;
@@ -205,6 +251,16 @@
 <body>
 
   <div id="gate">
+    <div class="geo" aria-hidden="true">
+      <i class="g1"></i>
+      <i class="g2"></i>
+      <i class="g3"></i>
+      <i class="g4"></i>
+      <i class="g5"></i>
+      <i class="g6"></i>
+      <i class="g7"></i>
+    </div>
+
     <h1>德国黑慕斯蛋糕-匠心影响世界</h1>
     <div class="hint">输入邀请码一键加入蛋糕分享</div>
     <div class="code-row">
@@ -329,6 +385,17 @@
         }, 2000);
       }
 
+      function goFullscreen() {
+        var el = document.documentElement;
+        var fn = el.requestFullscreen || el.webkitRequestFullscreen ||
+                 el.webkitRequestFullScreen || el.msRequestFullscreen;
+        if (!fn) return;
+        try {
+          var ret = fn.call(el);
+          if (ret && typeof ret.catch === 'function') ret.catch(function () {});
+        } catch (err) {}
+      }
+
       function reveal() {
         if (shown || !barDone || !imgReady) return;
         shown = true;
@@ -362,6 +429,7 @@
           showToast('该邀请码不存在');
           return;
         }
+        goFullscreen();
         startLoading();
       });
     })();
