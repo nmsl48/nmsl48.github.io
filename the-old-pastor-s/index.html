@@ -7,15 +7,142 @@
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   html,body{width:100%;height:100%;background:#000;overflow:hidden}
-  body{display:flex;align-items:center;justify-content:center}
-  #loader{
+  body{display:flex;align-items:center;justify-content:center;
+    font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue","PingFang SC","Microsoft YaHei",Arial,sans-serif}
+
+  #gate{
     position:fixed;
     inset:0;
+    background:#fff;
     display:flex;
     flex-direction:column;
     align-items:center;
     justify-content:center;
+    padding:32px 24px;
+    overflow-y:auto;
+    transition:opacity .3s ease;
+    z-index:10;
+  }
+  #gate.hide{opacity:0;pointer-events:none}
+
+  #gate h1{
+    font-size:26px;
+    font-weight:600;
+    color:#2b2b2b;
+    letter-spacing:.02em;
+    text-align:center;
+    line-height:1.4;
+    margin-bottom:34px;
+  }
+
+  .hint{
+    font-size:13px;
+    color:#9a9a9a;
+    letter-spacing:.06em;
+    margin-bottom:18px;
+  }
+
+  .code-row{display:flex;gap:12px}
+
+  .code-input{
+    width:54px;
+    height:54px;
+    border-radius:15px;
+    border:1px solid #dcdcdc;
+    background:#fff;
+    text-align:center;
+    font-size:22px;
+    color:#2b2b2b;
+    font-family:inherit;
+    outline:none;
+    -webkit-appearance:none;
+    appearance:none;
+    transition:border-color .18s ease, background .18s ease;
+  }
+  .code-input:focus{border-color:#2b2b2b}
+
+  .agree-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-top:30px;
+    cursor:pointer;
+    user-select:none;
+    -webkit-user-select:none;
+    font-size:13px;
+    color:#8a8a8a;
+    letter-spacing:.02em;
+  }
+
+  #agreeBox{
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    border:1px solid #cfcfcf;
+    position:relative;
+    flex:0 0 auto;
+    transition:background .18s ease, border-color .18s ease;
+  }
+  #agreeBox.checked{background:#2b2b2b;border-color:#2b2b2b}
+  #agreeBox.checked::after{
+    content:"";
+    position:absolute;
+    left:5px;
+    top:3.5px;
+    width:5px;
+    height:8px;
+    border-right:1.5px solid #fff;
+    border-bottom:1.5px solid #fff;
+    transform:rotate(45deg);
+  }
+
+  #joinBtn{
+    margin-top:32px;
+    width:252px;
+    height:48px;
+    border:none;
+    border-radius:15px;
+    background:#2b2b2b;
+    color:#fff;
+    font-family:inherit;
+    font-size:15px;
+    letter-spacing:.1em;
+    cursor:pointer;
+    transition:background .2s ease, color .2s ease;
+  }
+  #joinBtn:disabled{
+    background:#ededed;
+    color:#b9b9b9;
+    cursor:not-allowed;
+  }
+
+  #toast{
+    position:fixed;
+    left:50%;
+    top:38px;
+    transform:translate(-50%,-14px);
+    background:rgba(43,43,43,.94);
+    color:#fff;
+    font-size:13px;
+    letter-spacing:.04em;
+    padding:10px 18px;
+    border-radius:10px;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .22s ease, transform .22s ease;
+    z-index:50;
+  }
+  #toast.show{opacity:1;transform:translate(-50%,0)}
+
+  #loader{
+    position:fixed;
+    inset:0;
+    display:none;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
     gap:22px;
+    z-index:5;
   }
   #bar{
     width:220px;
@@ -31,11 +158,11 @@
   }
   #text{
     color:#fff;
-    font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue","PingFang SC","Microsoft YaHei",Arial,sans-serif;
     font-size:14px;
     font-weight:300;
     letter-spacing:.1em;
   }
+
   #pic{
     position:fixed;
     inset:0;
@@ -44,6 +171,7 @@
     justify-content:center;
     opacity:0;
     pointer-events:none;
+    z-index:6;
   }
   #pic img{
     display:block;
@@ -56,26 +184,134 @@
 </style>
 </head>
 <body>
+
+  <div id="gate">
+    <h1>德国黑慕斯蛋糕-匠心影响世界</h1>
+    <div class="hint">输入邀请码一键加入蛋糕分享</div>
+    <div class="code-row">
+      <input class="code-input" type="text" inputmode="numeric" maxlength="1" autocomplete="off" aria-label="邀请码第1位">
+      <input class="code-input" type="text" inputmode="numeric" maxlength="1" autocomplete="off" aria-label="邀请码第2位">
+      <input class="code-input" type="text" inputmode="numeric" maxlength="1" autocomplete="off" aria-label="邀请码第3位">
+      <input class="code-input" type="text" inputmode="numeric" maxlength="1" autocomplete="off" aria-label="邀请码第4位">
+    </div>
+    <div class="agree-row" id="agreeRow">
+      <div id="agreeBox" data-checked="0"></div>
+      <span>同意用户协议与隐私政策</span>
+    </div>
+    <button id="joinBtn" disabled>立即加入</button>
+  </div>
+
+  <div id="toast"></div>
+
   <div id="loader">
     <div id="bar"><div id="fill"></div></div>
     <div id="text">请稍等.美味马上到来...</div>
   </div>
+
   <div id="pic">
     <img alt="">
   </div>
+
   <script>
     (function () {
-      var fill = document.getElementById('fill');
+      var CODE = '2370';
+
+      var gate = document.getElementById('gate');
       var loader = document.getElementById('loader');
       var pic = document.getElementById('pic');
+      var fill = document.getElementById('fill');
       var img = pic.querySelector('img');
-      var preload = new Image();
+      var inputs = Array.prototype.slice.call(document.querySelectorAll('.code-input'));
+      var agreeRow = document.getElementById('agreeRow');
+      var agreeBox = document.getElementById('agreeBox');
+      var joinBtn = document.getElementById('joinBtn');
+      var toast = document.getElementById('toast');
+
+      var imgReady = false;
       var barDone = false;
-      var ready = false;
       var shown = false;
+      var toastTimer = null;
+
+      img.onload = function () {
+        imgReady = true;
+        reveal();
+      };
+      img.onerror = function () {
+        imgReady = true;
+        reveal();
+      };
+      img.src = 'the-old-pastor0.png';
+
+      function getCode() {
+        return inputs.map(function (i) { return i.value; }).join('');
+      }
+
+      function updateBtn() {
+        var ok = agreeBox.dataset.checked === '1' && getCode().length === 4;
+        joinBtn.disabled = !ok;
+      }
+
+      inputs.forEach(function (inp, i) {
+        inp.addEventListener('keydown', function (e) {
+          if (/^[0-9]$/.test(e.key) && inp.value) {
+            inp.value = '';
+          }
+          if (e.key === 'Backspace' && !inp.value && i > 0) {
+            e.preventDefault();
+            inputs[i - 1].value = '';
+            inputs[i - 1].focus();
+            updateBtn();
+          }
+          if (e.key === 'ArrowLeft' && i > 0) inputs[i - 1].focus();
+          if (e.key === 'ArrowRight' && i < inputs.length - 1) inputs[i + 1].focus();
+        });
+
+        inp.addEventListener('input', function () {
+          var v = inp.value.replace(/\D/g, '');
+          if (v.length > 1) v = v.slice(-1);
+          inp.value = v;
+          if (v && i < inputs.length - 1) inputs[i + 1].focus();
+          updateBtn();
+        });
+
+        inp.addEventListener('paste', function (e) {
+          e.preventDefault();
+          var clip = e.clipboardData || window.clipboardData;
+          var text = (clip ? clip.getData('text') : '').replace(/\D/g, '');
+          if (!text) return;
+          var j = i;
+          for (var k = 0; k < text.length; k++) {
+            if (j >= inputs.length) break;
+            inputs[j].value = text.charAt(k);
+            j++;
+          }
+          inputs[Math.min(j, inputs.length - 1)].focus();
+          updateBtn();
+        });
+
+        inp.addEventListener('focus', function () {
+          inp.select();
+        });
+      });
+
+      agreeRow.addEventListener('click', function () {
+        var on = agreeBox.dataset.checked === '1';
+        agreeBox.dataset.checked = on ? '0' : '1';
+        agreeBox.classList.toggle('checked', !on);
+        updateBtn();
+      });
+
+      function showToast(msg) {
+        toast.textContent = msg;
+        toast.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () {
+          toast.classList.remove('show');
+        }, 2000);
+      }
 
       function reveal() {
-        if (shown || !barDone || !ready) return;
+        if (shown || !barDone || !imgReady) return;
         shown = true;
         loader.style.display = 'none';
         pic.style.opacity = '1';
@@ -86,25 +322,33 @@
         });
       }
 
-      preload.onload = function () {
-        img.src = preload.src;
-        img.onload = function () {
-          ready = true;
-          reveal();
-        };
-      };
-
-      preload.src = 'the-old-pastor0.png';
-
-      requestAnimationFrame(function () {
-        fill.style.width = '100%';
-      });
-
       fill.addEventListener('transitionend', function (e) {
         if (e.propertyName !== 'width') return;
         barDone = true;
         reveal();
-      }, { once: true });
+      });
+
+      function startLoading() {
+        gate.classList.add('hide');
+        setTimeout(function () {
+          gate.style.display = 'none';
+        }, 320);
+        loader.style.display = 'flex';
+        requestAnimationFrame(function () {
+          requestAnimationFrame(function () {
+            fill.style.width = '100%';
+          });
+        });
+      }
+
+      joinBtn.addEventListener('click', function () {
+        if (joinBtn.disabled) return;
+        if (getCode() !== CODE) {
+          showToast('该邀请码不存在');
+          return;
+        }
+        startLoading();
+      });
     })();
   </script>
 </body>
