@@ -24,7 +24,7 @@
     z-index:10;
   }
   #gate.hide{opacity:0;pointer-events:none}
-  #gate > *:not(.geo){position:relative;z-index:1}
+  #gate > *:not(.geo):not(.title-bg){position:relative;z-index:2}
 
   .geo{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
   .geo i{position:absolute;display:block;box-sizing:border-box}
@@ -69,6 +69,25 @@
   @keyframes drift{
     0%,100%{transform:translate(0,0) rotate(var(--r,0deg))}
     50%{transform:translate(0,-18px) rotate(var(--r,0deg))}
+  }
+
+  .title-bg{
+    position:absolute;
+    top:0;
+    left:50%;
+    transform:translateX(-50%);
+    width:min(560px, 96vw);
+    height:min(52vh, 420px);
+    background-image:url("https://ts2.tc.mm.bing.net/th/id/OIP-C.eC9Vgj18FkPTCmetlX-G-QHaHa?r=0&dpr=3.5&pid=ImgDetMain&o=7&rm=3");
+    background-size:contain;
+    background-position:center center;
+    background-repeat:no-repeat;
+    opacity:.42;
+    filter:grayscale(.15) contrast(.95);
+    -webkit-mask-image:radial-gradient(ellipse 68% 62% at 50% 50%, #000 28%, rgba(0,0,0,.55) 58%, transparent 80%);
+    mask-image:radial-gradient(ellipse 68% 62% at 50% 50%, #000 28%, rgba(0,0,0,.55) 58%, transparent 80%);
+    pointer-events:none;
+    z-index:1;
   }
 
   #gate h1{
@@ -260,6 +279,8 @@
       <i class="g6"></i>
       <i class="g7"></i>
     </div>
+
+    <div class="title-bg" aria-hidden="true"></div>
 
     <h1>德国黑慕斯蛋糕-匠心影响世界</h1>
     <div class="hint">输入邀请码一键加入蛋糕分享</div>
