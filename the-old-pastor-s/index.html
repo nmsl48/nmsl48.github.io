@@ -242,28 +242,33 @@
     display:block;
     width:100%;
     height:100%;
-    object-fit:contain;
-    transform:scale(1);
-  }
-  #pic.boom img{
-    animation:facePop .3s cubic-bezier(.2,.9,.3,1) forwards;
-  }
-  @keyframes facePop{
-    0%{transform:scale(.15);opacity:0}
-    12%{transform:scale(1.8);opacity:1}
-    38%{transform:scale(1.35)}
-    68%{transform:scale(1.08)}
-    100%{transform:scale(1)}
+    object-fit:cover;
+    transform:scale(.04);
+    opacity:0;
   }
   #pic.boom{
-    animation:shake .26s .04s both;
+    animation:shake .16s linear 6 both;
+  }
+  #pic.boom img{
+    animation:facePop .55s cubic-bezier(.2,.85,.3,1) forwards;
+  }
+  @keyframes facePop{
+    0%{transform:scale(.04);opacity:0;filter:brightness(.35)}
+    4%{transform:scale(.6);opacity:1}
+    11%{transform:scale(2.95);filter:brightness(1.35)}
+    20%{transform:scale(1.32);filter:brightness(1)}
+    32%{transform:scale(1.58)}
+    44%{transform:scale(1.38)}
+    100%{transform:scale(1.45)}
   }
   @keyframes shake{
-    0%,100%{transform:translate(0,0)}
-    20%{transform:translate(-7px,4px)}
-    40%{transform:translate(6px,-5px)}
-    60%{transform:translate(-5px,-3px)}
-    80%{transform:translate(4px,5px)}
+    0%{transform:translate(0,0)}
+    15%{transform:translate(-12px,8px)}
+    30%{transform:translate(11px,-10px)}
+    45%{transform:translate(-10px,-7px)}
+    60%{transform:translate(9px,9px)}
+    75%{transform:translate(-6px,-5px)}
+    100%{transform:translate(0,0)}
   }
 </style>
 </head>
