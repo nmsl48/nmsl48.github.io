@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=overlays-content">
 <meta name="screen-orientation" content="portrait">
 <meta name="x5-orientation" content="portrait">
 <meta name="full-screen" content="yes">
@@ -24,6 +24,7 @@
     justify-content:center;
     padding:32px 24px;
     overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
     transition:opacity .3s ease;
     z-index:10;
   }
@@ -76,12 +77,12 @@
   }
 
   .title-bg{
-    position:absolute;
+    position:fixed;
     top:0;
     left:50%;
     transform:translateX(-50%);
-    width:min(560px, 96vw);
-    height:min(52vh, 420px);
+    width:560px;
+    height:420px;
     background-image:url("https://ts2.tc.mm.bing.net/th/id/OIP-C.eC9Vgj18FkPTCmetlX-G-QHaHa?r=0&dpr=3.5&pid=ImgDetMain&o=7&rm=3");
     background-size:contain;
     background-position:center center;
@@ -206,6 +207,7 @@
   #loader{
     position:fixed;
     inset:0;
+    background:#f7f4ee;
     display:none;
     flex-direction:column;
     align-items:center;
@@ -216,17 +218,17 @@
   #bar{
     width:220px;
     height:3px;
-    background:rgba(255,255,255,.18);
+    background:rgba(0,0,0,.12);
     overflow:hidden;
   }
   #fill{
     width:0;
     height:100%;
-    background:#fff;
+    background:#1c1c1c;
     transition:width 3s cubic-bezier(.45,.05,.25,1);
   }
   #text{
-    color:#fff;
+    color:#1c1c1c;
     font-size:14px;
     font-weight:300;
     letter-spacing:.1em;
@@ -235,6 +237,7 @@
   #pic{
     position:fixed;
     inset:0;
+    background:#000;
     display:flex;
     align-items:center;
     justify-content:center;
@@ -343,11 +346,20 @@
       var agreeBox = document.getElementById('agreeBox');
       var joinBtn = document.getElementById('joinBtn');
       var toast = document.getElementById('toast');
+      var titleBg = document.querySelector('.title-bg');
 
       var imgReady = false;
       var barDone = false;
       var shown = false;
       var toastTimer = null;
+
+      function lockTitleBgSize() {
+        var w = Math.min(560, Math.round(window.innerWidth * 0.96));
+        var h = Math.min(Math.round(window.innerHeight * 0.52), 420);
+        titleBg.style.width = w + 'px';
+        titleBg.style.height = h + 'px';
+      }
+      lockTitleBgSize();
 
       img.onload = function () {
         imgReady = true;
