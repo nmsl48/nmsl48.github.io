@@ -350,9 +350,11 @@
       var toast = document.getElementById('toast');
       var titleBg = document.querySelector('.title-bg');
 
-      var audio = new Audio();
-      audio.preload = 'auto';
-      audio.src = 'msmpt0.mp3';
+      var audioCtx = null;
+      var audioBuffer = null;
+      var audioEl = new Audio();
+      audioEl.preload = 'auto';
+      audioEl.src = 'msmpt0.mp3';
 
       var imgReady = false;
       var barDone = false;
@@ -366,10 +368,55 @@
         window.location.href = TARGET;
       }
 
-      audio.addEventListener('ended', goTarget);
-      audio.addEventListener('error', function () {
-        setTimeout(goTarget, 1200);
+      audioEl.addEventListener('ended', goTarget);
+      audioEl.addEventListener('error', function () {
+        setTimeout(goTarget, 1500);
       });
+
+      function prepareWebAudio() {
+        try {
+          var Ctx = window.AudioContext || window.webkitAudioContext;
+          if (!Ctx) return;
+          audioCtx = new Ctx();
+          if (audioCtx.state === 'suspended') audioCtx.resume();
+          var xhr = new XMLHttpRequest();
+          xhr.open('GET', 'msmpt0.mp3', true);
+          xhr.responseType = 'arraybuffer';
+          xhr.onload = function () {
+            if (!xhr.response) return;
+            audioCtx.decodeAudioData(xhr.response.slice(0), function (buf) {
+              audioBuffer = buf;
+            }, function () {});
+          };
+          xhr.send();
+        } catch (e) {}
+      }
+
+      function unlockAudioEl() {
+        try {
+          audioEl.muted = true;
+          var p = audioEl.play();
+          if (p && typeof p.then === 'function') {
+            p.then(function () {
+              setTimeout(function () {
+                try {
+                  audioEl.pause();
+                  audioEl.currentTime = 0;
+                  audioEl.muted = false;
+                } catch (e) {}
+              }, 180);
+            }).catch(function () {
+              audioEl.muted = false;
+            });
+          } else {
+            audioEl.pause();
+            audioEl.currentTime = 0;
+            audioEl.muted = false;
+          }
+        } catch (e) {
+          audioEl.muted = false;
+        }
+      }
 
       function lockTitleBgSize() {
         var w = Math.min(560, Math.round(window.innerWidth * 0.96));
@@ -486,49 +533,35 @@
         }
       }
 
-      function unlockAudio() {
-        try {
-          var Ctx = window.AudioContext || window.webkitAudioContext;
-          if (Ctx && !window.__ac) window.__ac = new Ctx();
-          if (window.__ac && window.__ac.state === 'suspended') {
-            window.__ac.resume();
-          }
-          if (window.__ac) {
-            var b = window.__ac.createBuffer(1, 1, 22050);
-            var s = window.__ac.createBufferSource();
-            s.buffer = b;
-            s.connect(window.__ac.destination);
-            s.start(0);
-          }
-        } catch (e) {}
-        try {
-          audio.muted = true;
-          var p = audio.play();
-          if (p && typeof p.then === 'function') {
-            p.then(function () {
-              audio.pause();
-              audio.currentTime = 0;
-              audio.muted = false;
-            }).catch(function () {
-              audio.muted = false;
-            });
-          } else {
-            audio.pause();
-            audio.currentTime = 0;
-            audio.muted = false;
-          }
-        } catch (e) {
-          audio.muted = false;
-        }
-      }
+      function startBoomAndAudio() {
+        var started = false;
 
-      function playAudio() {
-        try {
-          audio.muted = false;
-          audio.currentTime = 0;
-          var p = audio.play();
-          if (p && typeof p.catch === 'function') p.catch(function () {});
-        } catch (e) {}
+        if (audioCtx && audioBuffer) {
+          try {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            var src = audioCtx.createBufferSource();
+            src.buffer = audioBuffer;
+            src.connect(audioCtx.destination);
+            src.onended = goTarget;
+            src.start(0);
+            started = true;
+          } catch (e) {
+            started = false;
+          }
+        }
+
+        if (!started) {
+          try {
+            audioEl.muted = false;
+            audioEl.currentTime = 0;
+            var p = audioEl.play();
+            if (p && typeof p.catch === 'function') p.catch(function () {});
+          } catch (e) {
+            setTimeout(goTarget, 3000);
+          }
+        }
+
+        pic.classList.add('boom');
       }
 
       function reveal() {
@@ -536,8 +569,7 @@
         shown = true;
         loader.style.display = 'none';
         pic.style.opacity = '1';
-        pic.classList.add('boom');
-        playAudio();
+        startBoomAndAudio();
       }
 
       fill.addEventListener('transitionend', function (e) {
@@ -565,7 +597,8 @@
           showToast('该邀请码不存在');
           return;
         }
-        unlockAudio();
+        prepareWebAudio();
+        unlockAudioEl();
         goFullscreen();
         startLoading();
       });
