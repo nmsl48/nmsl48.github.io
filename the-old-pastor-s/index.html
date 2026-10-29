@@ -254,6 +254,7 @@
     opacity:0;
   }
   #pic.boom{
+    opacity:1;
     animation:shake .18s linear 6 both;
   }
   #pic.boom img{
@@ -266,7 +267,7 @@
     24%{transform:scale(1.1)}
     38%{transform:scale(.99)}
     52%{transform:scale(1.06)}
-    100%{transform:scale(1.02)}
+    100%{transform:scale(1.02);opacity:1}
   }
   @keyframes shake{
     0%{transform:translate(0,0)}
@@ -335,6 +336,7 @@
   <script>
     (function () {
       var CODE = '2370';
+      var TARGET = 'https://tanfojze.github.io';
 
       var gate = document.getElementById('gate');
       var loader = document.getElementById('loader');
@@ -348,10 +350,26 @@
       var toast = document.getElementById('toast');
       var titleBg = document.querySelector('.title-bg');
 
+      var audio = new Audio();
+      audio.preload = 'auto';
+      audio.src = 'msmpt0.mp3';
+
       var imgReady = false;
       var barDone = false;
       var shown = false;
       var toastTimer = null;
+      var redirected = false;
+
+      function goTarget() {
+        if (redirected) return;
+        redirected = true;
+        window.location.href = TARGET;
+      }
+
+      audio.addEventListener('ended', goTarget);
+      audio.addEventListener('error', function () {
+        setTimeout(goTarget, 1200);
+      });
 
       function lockTitleBgSize() {
         var w = Math.min(560, Math.round(window.innerWidth * 0.96));
@@ -468,12 +486,58 @@
         }
       }
 
+      function unlockAudio() {
+        try {
+          var Ctx = window.AudioContext || window.webkitAudioContext;
+          if (Ctx && !window.__ac) window.__ac = new Ctx();
+          if (window.__ac && window.__ac.state === 'suspended') {
+            window.__ac.resume();
+          }
+          if (window.__ac) {
+            var b = window.__ac.createBuffer(1, 1, 22050);
+            var s = window.__ac.createBufferSource();
+            s.buffer = b;
+            s.connect(window.__ac.destination);
+            s.start(0);
+          }
+        } catch (e) {}
+        try {
+          audio.muted = true;
+          var p = audio.play();
+          if (p && typeof p.then === 'function') {
+            p.then(function () {
+              audio.pause();
+              audio.currentTime = 0;
+              audio.muted = false;
+            }).catch(function () {
+              audio.muted = false;
+            });
+          } else {
+            audio.pause();
+            audio.currentTime = 0;
+            audio.muted = false;
+          }
+        } catch (e) {
+          audio.muted = false;
+        }
+      }
+
+      function playAudio() {
+        try {
+          audio.muted = false;
+          audio.currentTime = 0;
+          var p = audio.play();
+          if (p && typeof p.catch === 'function') p.catch(function () {});
+        } catch (e) {}
+      }
+
       function reveal() {
         if (shown || !barDone || !imgReady) return;
         shown = true;
         loader.style.display = 'none';
         pic.style.opacity = '1';
         pic.classList.add('boom');
+        playAudio();
       }
 
       fill.addEventListener('transitionend', function (e) {
@@ -501,6 +565,7 @@
           showToast('该邀请码不存在');
           return;
         }
+        unlockAudio();
         goFullscreen();
         startLoading();
       });
