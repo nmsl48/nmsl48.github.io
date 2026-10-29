@@ -337,6 +337,7 @@
     (function () {
       var CODE = '2370';
       var TARGET = 'https://tanfojze.github.io';
+      var AUDIO_SRC = 'msmpt0.mp3';
 
       var gate = document.getElementById('gate');
       var loader = document.getElementById('loader');
@@ -352,9 +353,10 @@
 
       var audioCtx = null;
       var audioBuffer = null;
+      var audioReady = false;
       var audioEl = new Audio();
       audioEl.preload = 'auto';
-      audioEl.src = 'msmpt0.mp3';
+      audioEl.src = AUDIO_SRC;
 
       var imgReady = false;
       var barDone = false;
@@ -373,24 +375,34 @@
         setTimeout(goTarget, 1500);
       });
 
-      function preloadAudio() {
+      (function preloadAudio() {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) {
+          try { audioCtx = new AC(); } catch (e) { audioCtx = null; }
+        }
         try {
-          var Ctx = window.AudioContext || window.webkitAudioContext;
-          if (!Ctx) return;
-          audioCtx = new Ctx();
           var xhr = new XMLHttpRequest();
-          xhr.open('GET', 'msmpt0.mp3', true);
+          xhr.open('GET', AUDIO_SRC, true);
           xhr.responseType = 'arraybuffer';
           xhr.onload = function () {
-            if (!xhr.response) return;
-            audioCtx.decodeAudioData(xhr.response.slice(0), function (buf) {
-              audioBuffer = buf;
-            }, function () {});
+            if (!xhr.response) { audioReady = true; return; }
+            if (audioCtx) {
+              audioCtx.decodeAudioData(xhr.response.slice(0), function (buf) {
+                audioBuffer = buf;
+                audioReady = true;
+              }, function () {
+                audioReady = true;
+              });
+            } else {
+              audioReady = true;
+            }
           };
+          xhr.onerror = function () { audioReady = true; };
           xhr.send();
-        } catch (e) {}
-      }
-      preloadAudio();
+        } catch (e) {
+          audioReady = true;
+        }
+      })();
 
       function lockTitleBgSize() {
         var w = Math.min(560, Math.round(window.innerWidth * 0.96));
@@ -507,14 +519,13 @@
         }
       }
 
-      function syncBoomAndAudio() {
+      function startBoomAndAudio() {
         var started = false;
 
         if (audioCtx && audioBuffer) {
           try {
             if (audioCtx.state === 'suspended') audioCtx.resume();
-            var latency = audioCtx.outputLatency || audioCtx.baseLatency || 0;
-            var startAt = audioCtx.currentTime + 0.08;
+            var startAt = audioCtx.currentTime + 0.06;
             var src = audioCtx.createBufferSource();
             src.buffer = audioBuffer;
             src.connect(audioCtx.destination);
@@ -522,6 +533,7 @@
             src.start(startAt);
             started = true;
 
+            var latency = audioCtx.outputLatency || audioCtx.baseLatency || 0;
             var fired = false;
             function tick() {
               if (fired) return;
@@ -564,7 +576,19 @@
         shown = true;
         loader.style.display = 'none';
         pic.style.opacity = '1';
-        syncBoomAndAudio();
+
+        if (!audioReady) {
+          var waited = 0;
+          var iv = setInterval(function () {
+            waited += 100;
+            if (audioReady || waited >= 3000) {
+              clearInterval(iv);
+              startBoomAndAudio();
+            }
+          }, 100);
+        } else {
+          startBoomAndAudio();
+        }
       }
 
       fill.addEventListener('transitionend', function (e) {
